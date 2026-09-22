@@ -1,9 +1,9 @@
 key=ykusrq
-found_by=ext-w1
+found_by=kill-w2
 idx=1618816210
-elapsed_s=142.581
-total_tried=1613816210
-aggregate_mkeys_s=11.319
+elapsed_s=269.198
+total_tried=1617816210
+aggregate_mkeys_s=6.010
 alphabet=base36
 length=6
 construction=keyed_md5

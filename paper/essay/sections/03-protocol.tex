@@ -1,0 +1,42 @@
+\section{TCP Coordination Protocol and Message Types}\label{sec:protocol}
+The master and workers communicate over raw TCP sockets using a line-oriented
+protocol: each message is one JSON object terminated by a newline, which makes
+framing trivial and the traffic human-readable during debugging. The master
+never blocks a fast worker: chunks are handed out \emph{on request}, so faster
+nodes simply request more often. \autoref{tab:msgs} lists the message types.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{l l X}
+\hline
+\textbf{Message} & \textbf{Direction} & \textbf{Purpose / fields}\\
+\hline
+\texttt{HELLO}     & W$\rightarrow$M & join; worker id, host, pid, cores\\
+\texttt{PARAMS}    & M$\rightarrow$W & target data, digest, alphabet, length, construction\\
+\texttt{REQUEST}   & W$\rightarrow$M & ask for a keyspace chunk\\
+\texttt{ASSIGN}    & M$\rightarrow$W & \{chunk id, start, end\}\\
+\texttt{PROGRESS}  & W$\rightarrow$M & \{chunk, tried, rate\}; doubles as a heartbeat\\
+\texttt{HEARTBEAT} & W$\rightarrow$M & liveness while idle between chunks\\
+\texttt{DONE}      & W$\rightarrow$M & chunk exhausted with no match\\
+\texttt{FOUND}     & W$\rightarrow$M & \{chunk, key, index\} on a match\\
+\texttt{NOWORK}    & M$\rightarrow$W & queue momentarily empty; retry\\
+\texttt{STOP}      & M$\rightarrow$W & global halt (key found, or keyspace exhausted)\\
+\hline
+\end{tabularx}
+\caption{Master--worker message protocol.}
+\label{tab:msgs}
+\end{table}
+
+\paragraph{Lifecycle.} A worker sends \texttt{HELLO}, receives \texttt{PARAMS},
+then loops: \texttt{REQUEST}~$\rightarrow$~\texttt{ASSIGN}, crack the chunk in
+sub-batches while emitting \texttt{PROGRESS}, and report \texttt{DONE} or
+\texttt{FOUND}. On \texttt{FOUND} the master \emph{re-verifies} the claimed key
+against the captured digest before trusting it, then broadcasts \texttt{STOP} to
+every connected worker so no node keeps hashing. The master node is never idle:
+it launches local worker subprocesses that connect back over loopback and crack
+alongside the remote workers.
+
+% TODO(you): if you want, add a short note on why newline-delimited JSON over
+% raw TCP was chosen versus alternatives (length-prefixing, gRPC, etc.).
+\todo{optional: justify the protocol/encoding design choice in your words}

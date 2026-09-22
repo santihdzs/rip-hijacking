@@ -1,0 +1,88 @@
+\documentclass[pdftex,12pt,a4paper]{article} 
+% margin size
+\usepackage[margin=1in]{geometry}
+
+% Math and algorithms
+\usepackage{amsmath,amssymb,amsthm,esint}  % For both in-line and equation mode
+\usepackage{bbm}
+\usepackage{mathdots}
+\usepackage{bm}
+\usepackage{algorithm}
+\usepackage{algorithmic} % Algorithm styles, need to be nested for the example shown
+\usepackage{aliascnt}
+\numberwithin{equation}{section} % Numbering of our equations per section
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+
+\usepackage{setspace} %Spacing on the front page for crest and titles
+\usepackage[]{fncychap} % Styles can be Sonny, Lenny, Glenn, Conny, Rejne, Bjarne and Bjornstrup
+\usepackage[hyphens]{url} % Deals with hyphens in urls to make them clickable
+\usepackage{xcolor} % Great if you want coloured text
+
+% Figures
+\usepackage{wrapfig}
+\usepackage{graphicx} % Inserting images
+\graphicspath{ {figures/} } 
+\usepackage{caption}
+\usepackage{float}
+
+% Tables
+\usepackage{tabularx}
+\usepackage{multirow} 
+\renewcommand{\arraystretch}{1.5}
+
+% Appendix
+\usepackage{appendix} 
+
+\usepackage{natbib}
+\usepackage{comment}
+
+% Tikz figures
+\usepackage{tikz}
+\newcommand{\ImageWidth}{14cm} 
+\usetikzlibrary{decorations.pathreplacing,positioning, arrows.meta} 
+
+% Fancy headers and footnotes
+\usepackage{fancyhdr}
+\usepackage[symbol]{footmisc}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}} 
+
+% Hyperlinks and auto-references
+\usepackage[hidelinks]{hyperref}  
+\def\sectionautorefname{Section}
+\def\appendixname{Appendix}
+\newcommand{\propositionautorefname}{Proposition}
+\newcommand{\definitionautorefname}{Definition}
+\newcommand{\corollaryautorefname}{Corollary}  
+
+\setlength{\footnotesep}{0.5cm}
+
+% visible placeholder marker for the author's own prose (shows in red)
+\newcommand{\todo}[1]{\par\noindent\textcolor{red!70!black}{$\blacktriangleright$ \textbf{TODO:} #1}\par}
+\renewcommand{\arraystretch}{1.1}
+% tighten vertical spacing to keep the report within 4 pages
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{5pt}{2pt}
+\titlespacing*{\paragraph}{0pt}{3pt}{1em}
+\setlength{\parskip}{1pt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% DOCUMENT STARTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+\begin{document}
+\input{preamble/title}
+
+\input{sections/01-introduction}
+\input{sections/02-reverse-engineering}
+\input{sections/03-protocol}
+\input{sections/04-partition}
+\input{sections/05-node-death}
+\input{sections/06-benchmarks}
+\input{sections/07-conclusion}
+
+\bibliographystyle{apalike}
+\bibliography{references}
+
+\end{document}

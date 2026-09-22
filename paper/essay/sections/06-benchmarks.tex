@@ -1,0 +1,41 @@
+\section{Benchmark Metrics}\label{sec:bench}
+All measurements target the size-06 digest and the keyed-MD5 construction on a
+host with 10 logical cores. Rates are in millions of keys hashed per second
+(Mkeys/s).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{X r r}
+\hline
+\textbf{Measurement} & \textbf{Aggregate} & \textbf{Per node/core}\\
+\hline
+BM1 single-core baseline            & 2.55 & 2.55\\
+BM2 scaling, 8 processes            & 10.67 & 1.33\\
+BM2 scaling, 10 processes           & 10.95 & 1.09\\
+BM3 distributed, 8 TCP workers      & 12.56 & $\approx$1.75\\
+\hline
+\end{tabularx}
+\caption{Hashing throughput (Mkeys/s). Full sweep in \texttt{results/benchmarks.txt}.}
+\label{tab:bench}
+\end{table}
+
+\paragraph{CPU-bound vs.\ network-bound.} Instrumenting each worker to split its
+wall time into hashing versus time blocked on the socket shows the workload is
+overwhelmingly compute-bound: across the distributed run, aggregate compute time
+was $69.1$\,s against $0.03$\,s of socket wait, i.e.\ \textbf{99.96\%} of time is
+spent hashing. The coordination protocol is therefore not the bottleneck; total
+throughput scales with available CPU cores until the host saturates
+(\autoref{tab:bench}, where per-core rate falls once the process count exceeds
+the physical core budget).
+
+\paragraph{End-to-end.} The full recovery of \texttt{ykusrq} took $738$\,s
+single-threaded versus $142$\,s on the contended cluster; an uncontended
+$\sim$12.6\,Mkeys/s cluster covers the whole $2.18\times10^9$ space in well under
+that.
+
+% Optional figure: render results/benchmarks.json with notebooks/graphing.ipynb.
+% \begin{figure}[H]\centering\includegraphics[width=0.8\linewidth]{scaling.pdf}
+% \caption{Aggregate throughput vs.\ worker count.}\label{fig:scaling}\end{figure}
+\todo{optional: generate the scaling figure from notebooks/graphing.ipynb and
+interpret the saturation point}

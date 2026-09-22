@@ -1,0 +1,17 @@
+\section{Conclusion and Deferred Work}\label{sec:conclusion}
+We recovered a RIPv2/RFC~2082 authentication key by reverse-engineering the
+keyed-MD5 construction (correcting the brief on both the MAC and the alphabet)
+and validating it against every authenticated packet in the capture. A
+pull-based master--worker cluster over TCP, with heartbeat- and
+disconnect-based failure recovery, reproduces the same key and is strongly
+CPU-bound.
+
+\paragraph{Deferred: live route injection.} The final offensive step --- forging
+an authenticated RIPv2 update with the recovered key and injecting it into a
+live FRR/Mininet topology with Scapy --- is implemented as a documented stub
+(\texttt{src/inject\_route.py}) and was intentionally \emph{not} executed here,
+as it requires the Mininet sandbox. See the \texttt{TODO} in that file.
+
+% TODO(you): closing remarks / what you learned / mitigations (e.g., longer
+% keys, per-neighbor keys, migrating off RIP). Your prose.
+\todo{write closing remarks and mitigation recommendations}

@@ -1,0 +1,28 @@
+\section{Node-Death Detection and Reassignment}\label{sec:death}
+No assigned chunk may be silently lost, or the search could terminate reporting
+``not found'' while skipping the key. The master defends against two failure
+modes, both of which requeue the dead node's chunk to the \emph{front} of
+\texttt{pending} so a surviving worker picks it up:
+
+\begin{enumerate}\itemsep2pt
+\item \textbf{Hard crash / kill.} The TCP socket closes; the master's read
+returns EOF, and the disconnect handler requeues every chunk that worker held.
+\item \textbf{Freeze / network partition.} The socket stays open but
+\texttt{PROGRESS} heartbeats stop. A monitor thread requeues any chunk whose
+last heartbeat is older than a timeout $T$ (default $5$\,s) and marks the node
+dead.
+\end{enumerate}
+
+\paragraph{Empirical check.} In a controlled run with three workers, freezing
+one with \texttt{SIGSTOP} and killing another with \texttt{SIGKILL} produced the
+expected master events:
+\begin{quote}\small\ttfamily
+TIMEOUT: worker freeze-w1 silent >4.0s, requeued chunk 19\\
+worker kill-w2 disconnected; requeued chunks [40]
+\end{quote}
+Both chunks were subsequently completed by the surviving worker, so coverage of
+the keyspace remained total.
+
+% TODO(you): optional reflection on timeout tuning (false positives on slow
+% nodes vs. detection latency). Left for your prose.
+\todo{optional: discuss timeout tuning trade-offs}

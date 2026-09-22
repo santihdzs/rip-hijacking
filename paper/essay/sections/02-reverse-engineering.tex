@@ -1,0 +1,66 @@
+\section{RIP Packet and MD5 Authentication: Reverse-Engineering and Validation}\label{sec:reveng}
+\paragraph{Packet layout.} Each captured update is a RIPv2 \emph{Response}
+(command~2) sent to the multicast group 224.0.0.9 on UDP/520. Authentication of
+type~3 (Keyed Message Digest) places an authentication \emph{header} as the
+first route-table entry and appends an authentication \emph{trailer} carrying
+the digest. The observed size-06 packet decomposes as in \autoref{tab:layout}.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{l l X}
+\hline
+\textbf{Region} & \textbf{Bytes} & \textbf{Contents (size-06 capture)}\\
+\hline
+RIP header        & 4  & command=2, version=2, routing-domain=0\\
+Auth header (RTE) & 20 & AFI=0xFFFF, auth-type=3, pkt-len=44, key-id=1, auth-len=20, seq, reserved\\
+Route entry       & 20 & the advertised route\\
+Auth trailer      & 20 & AFI=0xFFFF, type=0x0001, then the 16-byte digest\\
+\hline
+\end{tabularx}
+\caption{RIPv2/RFC~2082 authenticated packet layout (64-byte payload).}
+\label{tab:layout}
+\end{table}
+
+\paragraph{Digest construction (the key finding).} The assignment brief names
+``HMAC-MD5'', but the captured trailers are \emph{not} reproducible with HMAC.
+RFC~2082 instead specifies a \emph{keyed} MD5: the 16-byte digest field is
+first overwritten with the key, and a plain MD5 is taken over the whole packet.
+Concretely, writing $D$ for the payload bytes from the RIP header through the
+trailer's \texttt{AFI}/\texttt{type} field (i.e.\ everything except the 16 digest
+bytes) and $K_{16}$ for the ASCII key right-padded with zero bytes to 16:
+\begin{equation}
+\text{digest} \;=\; \mathrm{MD5}\bigl(\, D \,\|\, K_{16} \,\bigr).
+\label{eq:keyed}
+\end{equation}
+We tested both constructions and both candidate alphabets by brute force; only
+\eqref{eq:keyed} over a \textbf{base-36} alphabet (lowercase letters and
+digits, \emph{not} hexadecimal) reproduces the captured digest.
+
+\paragraph{Recovered key and validation.} The single-threaded oracle recovers
+\texttt{ykusrq} (index $1{,}618{,}816{,}210$ of $36^6$). Validation is not a
+single-packet coincidence: the same key reproduces the digest of
+\textbf{all 21} authenticated packets in the capture, each with a distinct
+sequence number and payload. \autoref{tab:reveng} summarizes the corrected
+parameters.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{l l l X}
+\hline
+\textbf{Parameter} & \textbf{Brief says} & \textbf{Actual (measured)} & \textbf{Evidence}\\
+\hline
+Construction & HMAC-MD5 & keyed-MD5 (RFC~2082) & only \eqref{eq:keyed} matches\\
+Alphabet     & hex / ``letters+numbers'' & base-36 & hex space exhausted, no match\\
+Key length   & 6 & 6 & filename \texttt{size\_06} + match\\
+Key (06\_01) & --- & \texttt{ykusrq} & 21/21 packets validate\\
+\hline
+\end{tabularx}
+\caption{Reverse-engineered authentication parameters.}
+\label{tab:reveng}
+\end{table}
+
+% TODO(you): discussion of what this weakness means (offline-crackable short
+% keys, no salt, digest-replacement scheme). Interpretation is yours.
+\todo{discuss the security implications of the construction and short keys}
