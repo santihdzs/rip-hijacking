@@ -1,0 +1,129 @@
+{
+  "host_cores": 10,
+  "keyspace": 2176782336,
+  "bm1_single_core": {
+    "keys": 5000000,
+    "seconds": 1.9634682089672424,
+    "hps": 2546514.3653280395
+  },
+  "bm2_scaling": [
+    {
+      "procs": 1,
+      "total_keys": 3000000,
+      "wall_s": 1.5083236694335938,
+      "aggregate_hps": 1988963.0195398054,
+      "per_core_hps": 1988963.0195398054
+    },
+    {
+      "procs": 2,
+      "total_keys": 6000000,
+      "wall_s": 1.5234487056732178,
+      "aggregate_hps": 3938432.5692466144,
+      "per_core_hps": 1969216.2846233072
+    },
+    {
+      "procs": 4,
+      "total_keys": 12000000,
+      "wall_s": 1.6928188800811768,
+      "aggregate_hps": 7088767.818695735,
+      "per_core_hps": 1772191.9546739338
+    },
+    {
+      "procs": 6,
+      "total_keys": 18000000,
+      "wall_s": 2.0247180461883545,
+      "aggregate_hps": 8890126.71857497,
+      "per_core_hps": 1481687.7864291614
+    },
+    {
+      "procs": 8,
+      "total_keys": 24000000,
+      "wall_s": 2.248353958129883,
+      "aggregate_hps": 10674475.837408857,
+      "per_core_hps": 1334309.4796761072
+    },
+    {
+      "procs": 10,
+      "total_keys": 30000000,
+      "wall_s": 2.7403221130371094,
+      "aggregate_hps": 10947618.112949096,
+      "per_core_hps": 1094761.8112949096
+    }
+  ],
+  "bm3_distributed": {
+    "workers": 8,
+    "max_index": 120000000,
+    "wall_s": 9.557082891464233,
+    "total_tried": 120000000.0,
+    "aggregate_hps": 12556132.594306178,
+    "mean_cpu_frac": 0.9996,
+    "total_compute_s": 69.1242,
+    "total_wait_s": 0.027700000000000002,
+    "per_worker": [
+      {
+        "tried": 14000000.0,
+        "compute_s": 8.3024,
+        "wait_s": 0.0028,
+        "wall_s": 9.117,
+        "hps": 1686267.7,
+        "cpu_frac": 0.9997
+      },
+      {
+        "tried": 14000000.0,
+        "compute_s": 8.2378,
+        "wait_s": 0.0044,
+        "wall_s": 9.2615,
+        "hps": 1699481.5,
+        "cpu_frac": 0.9995
+      },
+      {
+        "tried": 16000000.0,
+        "compute_s": 8.9501,
+        "wait_s": 0.0022,
+        "wall_s": 9.1545,
+        "hps": 1787697.2,
+        "cpu_frac": 0.9998
+      },
+      {
+        "tried": 16000000.0,
+        "compute_s": 8.9826,
+        "wait_s": 0.006,
+        "wall_s": 9.1937,
+        "hps": 1781211.7,
+        "cpu_frac": 0.9993
+      },
+      {
+        "tried": 14000000.0,
+        "compute_s": 8.2933,
+        "wait_s": 0.0031,
+        "wall_s": 9.1089,
+        "hps": 1688116.5,
+        "cpu_frac": 0.9996
+      },
+      {
+        "tried": 14000000.0,
+        "compute_s": 8.3799,
+        "wait_s": 0.003,
+        "wall_s": 9.1919,
+        "hps": 1670666.5,
+        "cpu_frac": 0.9996
+      },
+      {
+        "tried": 16000000.0,
+        "compute_s": 9.0618,
+        "wait_s": 0.003,
+        "wall_s": 9.0648,
+        "hps": 1765650.1,
+        "cpu_frac": 0.9997
+      },
+      {
+        "tried": 16000000.0,
+        "compute_s": 8.9163,
+        "wait_s": 0.0032,
+        "wall_s": 9.1217,
+        "hps": 1794467.1,
+        "cpu_frac": 0.9996
+      }
+    ]
+  }
+}

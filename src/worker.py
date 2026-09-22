@@ -86,9 +86,15 @@ def run(host, port, wid, die_after=None):
 
     t_start = time.time()
     total_tried = 0
+    # split wall time into compute (hashing) vs socket-wait (blocked on the
+    # master) so phase 3 can classify the workload as CPU- or network-bound.
+    t_compute = 0.0
+    t_wait = 0.0
     while True:
+        _s = time.perf_counter()
         send_msg(sock, {"type": "REQUEST"})
         msg = reader.read()
+        t_wait += time.perf_counter() - _s
         if msg is None:
             break
         mt = msg.get("type")
@@ -108,7 +114,9 @@ def run(host, port, wid, die_after=None):
         pos = start
         while pos < end:
             b_end = min(pos + BATCH, end)
+            _c = time.perf_counter()
             res = crack_batch(data, digest, alphabet, length, construction, pos, b_end)
+            t_compute += time.perf_counter() - _c
             total_tried += b_end - pos
             if res:
                 key, idx = res
@@ -118,13 +126,15 @@ def run(host, port, wid, die_after=None):
                 stop = True
                 break
             rate = total_tried / max(time.time() - t_start, 1e-9)
+            _s = time.perf_counter()
             send_msg(sock, {"type": "PROGRESS", "chunk": chunk,
                             "tried": b_end - start, "rate": rate})
+            m = reader.poll(0.0)
+            t_wait += time.perf_counter() - _s
             # crash injection for node-death testing
             if die_after and total_tried >= die_after:
                 print(f"[{wid}] simulated crash after {total_tried} keys", flush=True)
                 os._exit(1)
-            m = reader.poll(0.0)
             if m and m.get("type") == "STOP":
                 print(f"[{wid}] STOP mid-chunk (key={m.get('key')!r})", flush=True)
                 stop = True
@@ -132,8 +142,20 @@ def run(host, port, wid, die_after=None):
             pos = b_end
         if stop:
             break
+        _s = time.perf_counter()
         send_msg(sock, {"type": "DONE", "chunk": chunk, "tried": end - start})
+        t_wait += time.perf_counter() - _s
+
+    wall = time.time() - t_start
+    hps = total_tried / t_compute if t_compute else 0.0
+    cpu_frac = t_compute / (t_compute + t_wait) if (t_compute + t_wait) else 0.0
+    # machine-parseable summary line for the phase-3 benchmark harness
+    print(f"SUMMARY {wid} tried={total_tried} compute_s={t_compute:.4f} "
+          f"wait_s={t_wait:.4f} wall_s={wall:.4f} hps={hps:.1f} cpu_frac={cpu_frac:.4f}",
+          flush=True)
     try:
+        send_msg(sock, {"type": "SUMMARY", "worker": wid, "tried": total_tried,
+                        "compute_s": t_compute, "wait_s": t_wait, "hps": hps})
         sock.close()
     except OSError:
         pass

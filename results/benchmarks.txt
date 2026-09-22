@@ -1,0 +1,19 @@
+RIP auth cracker benchmarks
+host logical cores : 10
+keyspace (base36^6): 2,176,782,336
+
+BM1 single-core HPS: 2.547 Mkeys/s
+
+BM2 scaling (procs -> aggregate / per-core Mkeys/s):
+   1 :   1.99 /  1.99
+   2 :   3.94 /  1.97
+   4 :   7.09 /  1.77
+   6 :   8.89 /  1.48
+   8 :  10.67 /  1.33
+  10 :  10.95 /  1.09
+
+BM3 distributed (8 workers):
+  cluster aggregate HPS : 12.56 Mkeys/s
+  wall time             : 9.56s for 120,000,000.0 keys
+  compute fraction      : 99.96%  (CPU-bound)
+  aggregate compute/wait: 69.12s / 0.03s

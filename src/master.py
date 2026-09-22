@@ -29,7 +29,7 @@ HERE = Path(__file__).resolve().parent
 
 class Master:
     def __init__(self, data, digest, alphabet, length, construction,
-                 chunk_size, timeout):
+                 chunk_size, timeout, max_index=None):
         self.data = data
         self.digest = digest
         self.alphabet = alphabet
@@ -39,6 +39,8 @@ class Master:
         self.timeout = timeout
 
         self.keyspace = keyspace_size(alphabet, length)
+        if max_index:  # cap the searched space (used for bounded benchmarks)
+            self.keyspace = min(self.keyspace, max_index)
         self.num_chunks = (self.keyspace + chunk_size - 1) // chunk_size
 
         self.lock = threading.Lock()
@@ -251,6 +253,8 @@ def main():
                     help="worker subprocesses launched on the master host (>=1 so master also cracks)")
     ap.add_argument("--timeout", type=float, default=5.0,
                     help="seconds of silence before a node is presumed dead")
+    ap.add_argument("--max-index", type=int, default=None,
+                    help="cap the searched keyspace to [0,N) for bounded benchmarks")
     a = ap.parse_args()
 
     pkts = extract_auth_packets(a.pcap)
@@ -264,7 +268,7 @@ def main():
           flush=True)
 
     m = Master(p["data"], p["digest"], a.alphabet, length, a.construction,
-               a.chunk_size, a.timeout)
+               a.chunk_size, a.timeout, a.max_index)
 
     srv_thread = threading.Thread(target=m.serve, args=(a.host, a.port), daemon=True)
     srv_thread.start()
