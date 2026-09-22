@@ -1,0 +1,11 @@
+[project]
+name = "rip-hijacking"
+version = "0.1.0"
+description = "Distributed RIPv2 (RFC 2082) auth cracker for TC2007B network-security lab"
+requires-python = ">=3.11"
+dependencies = [
+    "scapy>=2.5",
+]
+
+[tool.uv]
+package = false
