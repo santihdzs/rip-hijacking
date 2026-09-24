@@ -13,3 +13,4 @@ results/*.log
 *.bbl
 *.blg
 results/progress_*.json
+.claude/

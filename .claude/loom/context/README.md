@@ -1,1 +1,0 @@
-This directory is read on demand and is never loaded every turn, so it does not bloat context. Drop reference material here (papers, RFCs, slides exported to pdf, docs); read a file only when a task needs it.
