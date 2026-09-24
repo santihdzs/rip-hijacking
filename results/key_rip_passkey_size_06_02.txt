@@ -1,0 +1,6 @@
+pcap=rip_passkey_size_06_02.pcap
+key=miy4or
+idx=1673128894
+alphabet=base36
+length=6
+construction=keyed_md5

@@ -166,9 +166,39 @@ class Master:
             if self.found:
                 return
             self.found = (key, wid, idx)
+        # CRASH-SAFE: persist the recovered key to disk IMMEDIATELY, before any
+        # STOP broadcast or cleanup, so it survives an interrupt right after find.
+        self.save_found_key(key, idx)
         print(f"[master] verified key {key!r} from {wid} (idx {idx}); broadcasting STOP", flush=True)
         self.broadcast_stop(key, wid)
         self.done_evt.set()
+
+    def save_found_key(self, key, idx):
+        """write the recovered key to the ledger + per-file record, durably."""
+        os.makedirs("results", exist_ok=True)
+        stem = Path(self.pcap_name).stem if self.pcap_name else "unknown"
+        # per-file record (overwrite)
+        rec = (f"pcap={self.pcap_name}\nkey={key}\nidx={idx}\n"
+               f"alphabet={self.alphabet}\nlength={self.length}\n"
+               f"construction={self.construction}\n")
+        with open(f"results/key_{stem}.txt", "w") as f:
+            f.write(rec)
+            f.flush()
+            os.fsync(f.fileno())
+        # master ledger (append once per pcap, deduped)
+        line = (f"{self.pcap_name}\t{key}\tidx={idx}\talphabet={self.alphabet}"
+                f"\tlength={self.length}\tconstruction={self.construction}\n")
+        path = "results/all_keys.txt"
+        try:
+            with open(path) as f:
+                existing = f.read()
+        except FileNotFoundError:
+            existing = ""
+        if f"{self.pcap_name}\t" not in existing:
+            with open(path, "a") as f:
+                f.write(line)
+                f.flush()
+                os.fsync(f.fileno())
 
     # --- per-connection handler ------------------------------------------
     def handle(self, conn, addr):
