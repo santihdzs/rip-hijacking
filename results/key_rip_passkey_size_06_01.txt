@@ -1,0 +1,6 @@
+pcap=rip_passkey_size_06_01.pcap
+key=ykusrq
+idx=1618816210
+alphabet=base36
+length=6
+construction=keyed_md5

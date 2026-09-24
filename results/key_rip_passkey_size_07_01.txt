@@ -1,0 +1,6 @@
+pcap=rip_passkey_size_07_01.pcap
+key=vs7evd8
+idx=18253050367
+alphabet=base36
+length=7
+construction=keyed_md5

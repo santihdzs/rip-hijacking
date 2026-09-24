@@ -1,0 +1,6 @@
+pcap=rip_passkey_size_07_03.pcap
+key=nh3cote
+idx=32269346987
+alphabet=base36
+length=7
+construction=keyed_md5
