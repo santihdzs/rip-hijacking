@@ -1,6 +1,6 @@
 \documentclass[pdftex,12pt,a4paper]{article} 
 % margin size
-\usepackage[margin=1in]{geometry}
+\usepackage[margin=0.85in]{geometry}
 
 % Math and algorithms
 \usepackage{amsmath,amssymb,amsthm,esint}  % For both in-line and equation mode
@@ -62,18 +62,30 @@
 
 % visible placeholder marker for the author's own prose (shows in red)
 \newcommand{\todo}[1]{\par\noindent\textcolor{red!70!black}{$\blacktriangleright$ \textbf{TODO:} #1}\par}
-\renewcommand{\arraystretch}{1.1}
-% tighten vertical spacing to keep the report within 4 pages
+\renewcommand{\arraystretch}{1.0}
+% tighten vertical spacing to keep the body within 4 pages
 \usepackage{titlesec}
-\titlespacing*{\section}{0pt}{5pt}{2pt}
-\titlespacing*{\paragraph}{0pt}{3pt}{1em}
-\setlength{\parskip}{1pt}
+\titlespacing*{\section}{0pt}{4pt}{1pt}
+\titlespacing*{\paragraph}{0pt}{2pt}{0.6em}
+\setlength{\parskip}{0pt}
+\usepackage{enumitem}
+\setlist{nosep,topsep=1pt,leftmargin=1.4em}
+\setlength{\abovedisplayskip}{3pt}
+\setlength{\belowdisplayskip}{3pt}
+\setlength{\abovedisplayshortskip}{2pt}
+\setlength{\belowdisplayshortskip}{2pt}
+\setlength{\footnotesep}{0.2cm}
+\setlength{\textfloatsep}{5pt}
+\setlength{\intextsep}{5pt}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% DOCUMENT STARTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 \begin{document}
-\input{preamble/title}
+% Front page (Tec logo + title fields)
+\include{preamble/front-page}
+\input{preamble/contents}
 
+% Body: five required sections in order, plus intro and conclusion
 \input{sections/01-introduction}
 \input{sections/02-reverse-engineering}
 \input{sections/03-protocol}
@@ -82,7 +94,11 @@
 \input{sections/06-benchmarks}
 \input{sections/07-conclusion}
 
+\addcontentsline{toc}{section}{References}
 \bibliographystyle{apalike}
 \bibliography{references}
+
+% Appendix (excluded from the 4-page target)
+\input{appendices/appendix}
 
 \end{document}

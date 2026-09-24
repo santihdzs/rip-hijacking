@@ -1,0 +1,23 @@
+\section*{Appendix A: Full Benchmark Scaling Sweep}
+\addcontentsline{toc}{section}{Appendix A}
+The multi-process scaling sweep (BM2), single host, 10 logical cores, base-36
+keyed-MD5. Per-core rate falls once the process count exceeds the physical-core
+budget (efficiency cores and scheduling contention).
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{0.7\linewidth}{r r r}
+\hline
+\textbf{Processes} & \textbf{Aggregate (Mkeys/s)} & \textbf{Per-core (Mkeys/s)}\\
+\hline
+1  & 1.99  & 1.99\\
+2  & 3.94  & 1.97\\
+4  & 7.09  & 1.77\\
+6  & 8.89  & 1.48\\
+8  & 10.67 & 1.33\\
+10 & 10.95 & 1.09\\
+\hline
+\end{tabularx}
+\caption{BM2 scaling sweep (raw multiprocessing, no sockets).}
+\end{table}
+Source data: \texttt{results/benchmarks.json}.
