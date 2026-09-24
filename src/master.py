@@ -11,6 +11,8 @@
   STOP to halt every worker immediately
 """
 import argparse
+import json
+import os
 import re
 import socket
 import subprocess
@@ -54,6 +56,11 @@ class Master:
         self.exhausted = False
         self.done_evt = threading.Event()
         self.t0 = None
+        # checkpoint/resume (set by main before serving)
+        self.progress_path = None
+        self.pcap_name = None
+        self.packet_index = 0
+        self.resume = True
 
     # --- chunk bookkeeping ------------------------------------------------
     def chunk_bounds(self, c):
@@ -65,6 +72,80 @@ class Master:
                 "digest": self.digest.hex(), "alphabet": self.alphabet,
                 "length": self.length, "construction": self.construction,
                 "keyspace": self.keyspace, "chunk_size": self.chunk_size}
+
+    # --- checkpoint / resume ---------------------------------------------
+    def _merged_completed_ranges(self):
+        """completed chunk ids -> sorted, merged absolute [start,end) ranges."""
+        ranges = []
+        for c in sorted(self.completed):
+            s, e = self.chunk_bounds(c)
+            if ranges and ranges[-1][1] == s:
+                ranges[-1][1] = e
+            else:
+                ranges.append([s, e])
+        return ranges
+
+    def save_checkpoint(self):
+        """atomically persist searched ranges so an interrupted run can resume."""
+        if not self.progress_path:
+            return
+        with self.lock:
+            data = {
+                "pcap": self.pcap_name, "packet_index": self.packet_index,
+                "alphabet": self.alphabet, "length": self.length,
+                "construction": self.construction, "keyspace": self.keyspace,
+                "chunk_size": self.chunk_size,
+                "completed_ranges": self._merged_completed_ranges(),
+                "found": self.found[0] if self.found else None,
+                "updated": time.time(),
+            }
+        os.makedirs(os.path.dirname(self.progress_path) or ".", exist_ok=True)
+        tmp = self.progress_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(data, f)
+        os.replace(tmp, self.progress_path)  # atomic on POSIX
+
+    def load_checkpoint(self):
+        """on startup, skip ranges already searched by a previous run."""
+        if not (self.resume and self.progress_path
+                and os.path.exists(self.progress_path)):
+            return
+        try:
+            with open(self.progress_path) as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            return
+        same = (data.get("pcap") == self.pcap_name
+                and data.get("packet_index") == self.packet_index
+                and data.get("alphabet") == self.alphabet
+                and data.get("length") == self.length
+                and data.get("construction") == self.construction
+                and data.get("keyspace") == self.keyspace)
+        if not same:
+            print("[master] checkpoint present but params differ; ignoring it",
+                  flush=True)
+            return
+        ranges = data.get("completed_ranges", [])
+        if not ranges:
+            return
+
+        def covered(s, e):
+            return any(rs <= s and e <= re_ for rs, re_ in ranges)
+
+        remaining, skipped = deque(), 0
+        for c in self.pending:
+            s, e = self.chunk_bounds(c)
+            if covered(s, e):
+                self.completed.add(c)
+                skipped += 1
+            else:
+                remaining.append(c)
+        self.pending = remaining
+        done_keys = sum(e - s for s, e in ranges)
+        self.total_tried += done_keys
+        print(f"[master] RESUME from {self.progress_path}: {skipped} chunks "
+              f"already searched (~{done_keys:,} keys), {len(self.pending)} "
+              f"chunks remaining", flush=True)
 
     def broadcast_stop(self, key, by):
         with self.lock:
@@ -206,6 +287,9 @@ class Master:
                     print(f"[master] status: pending={len(self.pending)} "
                           f"inflight={len(self.inflight)} completed={len(self.completed)} "
                           f"tried~{self.total_tried:,} workers_alive={alive}", flush=True)
+            # persist progress outside the lock (save_checkpoint takes it itself)
+            if tick % 2 == 0:
+                self.save_checkpoint()
 
     # --- server ----------------------------------------------------------
     def serve(self, host, port):
@@ -255,6 +339,10 @@ def main():
                     help="seconds of silence before a node is presumed dead")
     ap.add_argument("--max-index", type=int, default=None,
                     help="cap the searched keyspace to [0,N) for bounded benchmarks")
+    ap.add_argument("--progress-file", default=None,
+                    help="checkpoint path (default results/progress_<pcap>.json)")
+    ap.add_argument("--no-resume", action="store_true",
+                    help="ignore any existing checkpoint and start from index 0")
     a = ap.parse_args()
 
     pkts = extract_auth_packets(a.pcap)
@@ -269,6 +357,11 @@ def main():
 
     m = Master(p["data"], p["digest"], a.alphabet, length, a.construction,
                a.chunk_size, a.timeout, a.max_index)
+    m.pcap_name = Path(a.pcap).name
+    m.packet_index = a.packet_index
+    m.resume = not a.no_resume
+    m.progress_path = a.progress_file or f"results/progress_{Path(a.pcap).stem}.json"
+    m.load_checkpoint()  # adjust pending BEFORE the server starts assigning
 
     srv_thread = threading.Thread(target=m.serve, args=(a.host, a.port), daemon=True)
     srv_thread.start()
@@ -283,6 +376,7 @@ def main():
         print(f"[master] launched {a.local_workers} local worker(s); master node is cracking too", flush=True)
 
     m.done_evt.wait()
+    m.save_checkpoint()  # final flush (records completed ranges + found key)
     elapsed = time.time() - m.t0
     # make sure every worker gets STOP even if it was mid-request
     m.broadcast_stop(m.found[0] if m.found else None,

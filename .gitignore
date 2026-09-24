@@ -12,3 +12,4 @@ results/*.log
 *.synctex.gz
 *.bbl
 *.blg
+results/progress_*.json
