@@ -51,18 +51,19 @@
 \renewcommand{\thefootnote}{\fnsymbol{footnote}} 
 
 % Hyperlinks and auto-references
-\usepackage[hidelinks]{hyperref}  
-\def\sectionautorefname{Section}
-\def\appendixname{Appendix}
-\newcommand{\propositionautorefname}{Proposition}
-\newcommand{\definitionautorefname}{Definition}
-\newcommand{\corollaryautorefname}{Corollary}  
+\usepackage[hidelinks]{hyperref}
+\def\sectionautorefname{Sección}
+\def\tableautorefname{Tabla}
+\def\appendixname{Apéndice}
+\renewcommand{\tablename}{Tabla}
+\renewcommand{\figurename}{Figura}
+\renewcommand{\refname}{Referencias}
+\newcommand{\propositionautorefname}{Proposición}
+\newcommand{\definitionautorefname}{Definición}
+\newcommand{\corollaryautorefname}{Corolario}
 
 \setlength{\footnotesep}{0.5cm}
 
-% visible placeholder marker for the author's own prose (shows in red)
-\newcommand{\todo}[1]{\par\noindent\textcolor{red!70!black}{$\blacktriangleright$ \textbf{TODO:} #1}\par}
-\newcommand{\ph}[1]{\textcolor{red}{[#1]}} % draft placeholder marker
 \renewcommand{\arraystretch}{1.0}
 % tighten vertical spacing to keep the body within 4 pages
 \usepackage{titlesec}
@@ -95,7 +96,8 @@
 \input{sections/06-benchmarks}
 \input{sections/07-conclusion}
 
-\addcontentsline{toc}{section}{References}
+\addcontentsline{toc}{section}{Referencias}
+\nocite{rfc2082,rfc2453,claudecode}
 \bibliographystyle{apalike}
 \bibliography{references}
 

@@ -1,9 +1,3 @@
-"""phase 1 oracle: reverse-engineer RIPv2 (RFC 2082) auth and recover the key.
-
-parses a size-06 pcap, dumps the packet structure, then single-threaded brute
-forces the key while testing BOTH digest constructions (keyed-MD5 vs HMAC-MD5)
-and BOTH alphabets (hex first, base36 fallback). prints the recovered key.
-"""
 import sys
 import time
 from pathlib import Path

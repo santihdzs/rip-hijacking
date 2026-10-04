@@ -1,43 +1,27 @@
-\section{TCP Coordination Protocol and Message Types}\label{sec:protocol}
-\ph{Main idea: master and workers coordinate over raw TCP with a line-oriented
-protocol and pull-based work handout. Then, in order: each message is one JSON
-object terminated by a newline, so framing is trivial and the traffic is
-human-readable during debugging; the master never blocks a fast worker because
-chunks are handed out on request, so faster nodes request more often;
-\autoref{tab:msgs} lists the message types. Close on: newline-delimited JSON over
-raw TCP was chosen for trivial framing rather than a length-prefixed or heavier
-RPC scheme.}
+\section{Protocolo de coordinación TCP y tipos de mensaje}\label{sec:protocol}
+El main y los trabajadores se coordinan sobre TCP  con un protocolo orientado a líneas. Cada mensaje es un objeto JSON terminado por salto de línea (NDJSON), de modo que el tráfico resulta legible al depurar. El reparto es por demanda (\emph{work-pulling}), el main mantiene una cola de bloques y entrega uno cada vez que un trabajador lo solicita (un nodo más rápido pide más seguido), y el rendimiento global no queda limitado por el nodo más lento. La \autoref{tab:msgs} lista los tipos de mensaje.
 
 \begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\linewidth}{l l X}
 \hline
-\textbf{Message} & \textbf{Direction} & \textbf{Purpose / fields}\\
+\textbf{Mensaje} & \textbf{Dirección} & \textbf{Propósito / campos}\\
 \hline
-\texttt{HELLO}     & W$\rightarrow$M & join; worker id, host, pid, cores\\
-\texttt{PARAMS}    & M$\rightarrow$W & target data, digest, alphabet, length, construction\\
-\texttt{REQUEST}   & W$\rightarrow$M & ask for a keyspace chunk\\
-\texttt{ASSIGN}    & M$\rightarrow$W & \{chunk id, start, end\}\\
-\texttt{PROGRESS}  & W$\rightarrow$M & \{chunk, tried, rate\}; doubles as a heartbeat\\
-\texttt{HEARTBEAT} & W$\rightarrow$M & liveness while idle between chunks\\
-\texttt{DONE}      & W$\rightarrow$M & chunk exhausted with no match\\
-\texttt{FOUND}     & W$\rightarrow$M & \{chunk, key, index\} on a match\\
-\texttt{NOWORK}    & M$\rightarrow$W & queue momentarily empty; retry\\
-\texttt{STOP}      & M$\rightarrow$W & global halt (key found, or keyspace exhausted)\\
+\texttt{HELLO}     & W$\rightarrow$M & registro; id de worker, host, pid, núcleos\\
+\texttt{PARAMS}    & M$\rightarrow$W & datos del objetivo, digest, alfabeto, longitud, construcción\\
+\texttt{REQUEST}   & W$\rightarrow$M & solicita un bloque del espacio de claves\\
+\texttt{ASSIGN}    & M$\rightarrow$W & \{id de bloque, inicio, fin\}\\
+\texttt{PROGRESS}  & W$\rightarrow$M & \{bloque, probadas, tasa\}; también sirve de heartbeat\\
+\texttt{HEARTBEAT} & W$\rightarrow$M & señal de vida mientras está sin trabajo entre bloques\\
+\texttt{DONE}      & W$\rightarrow$M & bloque recorrido por completo sin coincidencia\\
+\texttt{FOUND}     & W$\rightarrow$M & \{bloque, clave, índice\} al hallar una coincidencia\\
+\texttt{NOWORK}    & M$\rightarrow$W & cola momentáneamente vacía; reintentar\\
+\texttt{STOP}      & M$\rightarrow$W & alto global (clave hallada o espacio agotado)\\
 \hline
 \end{tabularx}
-\caption{Master--worker message protocol.}
+\caption{Protocolo de mensajes maestro--trabajador.}
 \label{tab:msgs}
 \end{table}
 
-\paragraph{Lifecycle.} \ph{Main idea: the per-worker message lifecycle and how a
-found key halts the cluster. Then, in order: a worker sends \texttt{HELLO},
-receives \texttt{PARAMS}, then loops \texttt{REQUEST}$\rightarrow$\texttt{ASSIGN},
-cracking each chunk in sub-batches while emitting \texttt{PROGRESS}, and reports
-\texttt{DONE} or \texttt{FOUND}; on \texttt{FOUND} the master re-verifies the
-claimed key against the captured digest before trusting it, then broadcasts
-\texttt{STOP} so no node keeps hashing; the master is never idle, launching local
-worker subprocesses that connect back over loopback and crack alongside the
-remote workers. Close on: re-verification plus \texttt{STOP} guarantees a single
-trusted result and an immediate global halt.}
+\paragraph{Ciclo de vida.} Un trabajador envía \texttt{HELLO}, recibe \texttt{PARAMS} y alterna \texttt{REQUEST} y \texttt{ASSIGN}, procesando cada bloque en sublotes mientras emite \texttt{PROGRESS}, y reporta \texttt{DONE} o \texttt{FOUND}. Ante un \texttt{FOUND}, el main vuelve a calcular el digest de forma independiente antes de confiar en la clave y solo entonces manda \texttt{STOP} para que ningún nodo siga hasheando. El maestro lanza subprocesos trabajadores locales que se conectan por loopback y crackean junto a los remotos. La reverificación más el \texttt{STOP} garantizan un único resultado confiable.

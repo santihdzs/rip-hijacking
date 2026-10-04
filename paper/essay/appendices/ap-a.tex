@@ -1,17 +1,12 @@
-\section*{Appendix A: Full Benchmark Scaling Sweep}
-\addcontentsline{toc}{section}{Appendix A}
-\ph{Main idea: the raw multi-process scaling sweep behind BM2. Then, in order:
-single host, 10 logical cores, base-36 keyed-MD5, raw multiprocessing with no
-sockets; the table below lists aggregate and per-core Mkeys/s for 1 to 10
-processes; per-core rate falls once the process count exceeds the physical-core
-budget, from efficiency cores and scheduling contention. Close on: source data in
-\texttt{results/benchmarks.json}.}
+\section*{Apéndice A: Barrido completo de escalamiento}
+\addcontentsline{toc}{section}{Apéndice A}
+Host único, 10 núcleos lógicos, base-36 keyed-MD5, multiprocessing puro sin sockets. La tabla lista Mkeys/s agregados y por núcleo para 1 a 10 procesos; la tasa por núcleo cae cuando el número de procesos supera el presupuesto de núcleos físicos, por los núcleos de eficiencia y la contención del planificador. Datos fuente en \texttt{results/benchmarks.json}.
 
 \begin{table}[H]
 \centering\small
-\begin{tabularx}{0.7\linewidth}{r r r}
+\begin{tabular}{r r r}
 \hline
-\textbf{Processes} & \textbf{Aggregate (Mkeys/s)} & \textbf{Per-core (Mkeys/s)}\\
+\textbf{Procesos} & \textbf{Agregado (Mkeys/s)} & \textbf{Por núcleo (Mkeys/s)}\\
 \hline
 1  & 1.99  & 1.99\\
 2  & 3.94  & 1.97\\
@@ -20,6 +15,8 @@ budget, from efficiency cores and scheduling contention. Close on: source data i
 8  & 10.67 & 1.33\\
 10 & 10.95 & 1.09\\
 \hline
-\end{tabularx}
-\caption{BM2 scaling sweep (raw multiprocessing, no sockets).}
+\end{tabular}
+\caption{Barrido de escalamiento de BM2 (multiprocessing puro, sin sockets).}
 \end{table}
+
+\noindent \textbf{Análisis multimedia y código:} \href{https://github.com/santihdzs/rip-hijacking}{\textcolor{blue}{Repo con video y código}}

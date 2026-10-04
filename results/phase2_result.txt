@@ -1,9 +1,9 @@
-key=ykusrq
-found_by=ext-w3
-idx=1618816210
-elapsed_s=127.073
-total_tried=1613816210
-aggregate_mkeys_s=12.700
+key=n3s4mmcv
+found_by=ext-w2
+idx=2456777905475
+elapsed_s=247618.731
+total_tried=2456767905475
+aggregate_mkeys_s=9.922
 alphabet=base36
-length=6
+length=8
 construction=keyed_md5

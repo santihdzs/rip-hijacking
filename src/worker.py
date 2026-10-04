@@ -1,9 +1,3 @@
-"""phase 2 worker: connect to the master, crack assigned keyspace chunks.
-
-protocol: HELLO -> receive PARAMS -> loop {REQUEST -> ASSIGN -> crack, streaming
-PROGRESS (heartbeat) and polling for STOP -> DONE or FOUND}. a worker is just a
-process; killing it is how we exercise the master's node-death detection.
-"""
 import argparse
 import hashlib
 import os

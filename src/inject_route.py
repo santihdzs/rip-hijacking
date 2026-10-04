@@ -1,21 +1,3 @@
-"""DEFERRED phase: Scapy route-injection into a live FRR/Mininet topology.
-
-STATUS: STUB. the offensive final step is intentionally NOT executed here. it
-requires the instructor's / student's Mininet sandbox with FRR ripd running,
-which is not available in this environment.
-
-what IS implemented (safe, offline, testable): forging a valid RFC 2082
-authenticated RIPv2 Response with the recovered key, including the correct
-keyed-MD5 trailer. what is STUBBED: actually transmitting it onto the wire.
-
-    +-------------------------------------------------------------+
-    |  TODO (run only on your Mininet box):                        |
-    |   1. bring up the FRR/Mininet topology with ripd + md5 auth  |
-    |   2. set KEY / SEQ / target route below to a hijack route    |
-    |   3. run with --i-have-mininet --iface <rip-iface>           |
-    |   4. verify FRR installs the forged route (vtysh: show ip rip)|
-    +-------------------------------------------------------------+
-"""
 import argparse
 import struct
 import sys

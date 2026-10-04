@@ -1,42 +1,27 @@
-\section{Benchmark Metrics}\label{sec:bench}
-\ph{Main idea: benchmark setup and units. Then, in order: all measurements target
-the size-06 digest and the keyed-MD5 construction; the host has 10 logical cores;
-rates are millions of keys hashed per second (Mkeys/s). Close on: these units
-apply to \autoref{tab:bench} and the appendix scaling sweep.}
+\section{Métricas de rendimiento}\label{sec:bench}
+Todas las mediciones usan el digest de tamaño~06 y la construcción keyed-MD5. El host tiene 10 núcleos lógicos, las tasas se expresan en millones de claves hasheadas por segundo (Mkeys/s). Se tomaron tres mediciones: BM1 (un solo núcleo), BM2 (escalamiento por número de procesos) y BM3 (ejecución distribuida instrumentada sobre sockets). La \autoref{tab:bench} las resume; el barrido completo de BM2 está en el Apéndice~A.
 
 \begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\linewidth}{X r r}
 \hline
-\textbf{Measurement} & \textbf{Aggregate} & \textbf{Per node/core}\\
+\textbf{Medición} & \textbf{Agregado} & \textbf{Por nodo/núcleo}\\
 \hline
-BM1 single-core baseline            & 2.55 & 2.55\\
-BM2 scaling, 8 processes            & 10.67 & 1.33\\
-BM2 scaling, 10 processes           & 10.95 & 1.09\\
-BM3 distributed, 8 TCP workers      & 12.56 & $\approx$1.75\\
+BM1 un núcleo (base)                 & 2.55 & 2.55\\
+BM2 escalamiento, 8 procesos         & 10.67 & 1.33\\
+BM2 escalamiento, 10 procesos        & 10.95 & 1.09\\
+BM3 distribuido, 8 trabajadores TCP  & 12.56 & $\approx$1.73\\
 \hline
 \end{tabularx}
-\caption{Hashing throughput (Mkeys/s). Full sweep in \texttt{results/benchmarks.txt}.}
+\caption{Rendimiento de hashing (Mkeys/s). Barrido completo en \texttt{results/benchmarks.txt}.}
 \label{tab:bench}
 \end{table}
 
-\paragraph{CPU-bound vs.\ network-bound.} \ph{Main idea: the workload is
-overwhelmingly compute-bound, so coordination is not the bottleneck. Then, in
-order: each worker's wall time splits into hashing versus time blocked on the
-socket; across the distributed run aggregate compute time was $69.1$\,s against
-$0.03$\,s of socket wait, i.e.\ 99.96\% of time spent hashing; throughput
-therefore scales with CPU cores until the host saturates, as in \autoref{tab:bench}
-where per-core rate falls once the process count exceeds the physical-core
-budget. Close on: the TCP coordination protocol is not the bottleneck, CPU is.}
+\paragraph{CPU-bound vs.\ network-bound.} En la corrida distribuida el tiempo de cómputo agregado fue $69.1$~s frente a $0.03$~s de espera en sockets, es decir, 99.96\% del tiempo dedicado a hashear. El rendimiento escala con los núcleos hasta saturar el host, la tasa por núcleo cae cuando el número de procesos supera el presupuesto de núcleos físicos (\autoref{tab:bench} y Apéndice~A).
 
-\paragraph{End-to-end.} \ph{Main idea: end-to-end recovery time, single-threaded
-versus cluster. Then, in order: full recovery of \texttt{ykusrq} took $738$\,s
-single-threaded versus $142$\,s on the contended cluster; an uncontended
-$\sim$12.6\,Mkeys/s cluster covers the whole $2.18\times10^9$ space in well under
-that. Close on: the six-character base-36 space is a minutes-scale target at
-cluster rates.}
+\paragraph{Tiempo de recuperación extremo a extremo.} A la tasa de un núcleo ($2.55$~Mkeys/s), alcanzar el índice de la clave de tamaño~06 \texttt{ykusrq} ($1.62\times10^9$) toma del orden de 11~min; a la tasa agregada del clúster ($12.56$~Mkeys/s), unos 2~min, y recorrer todo el espacio $36^6$ unos 3~min. El caso real más costoso fue la clave de ocho caracteres \texttt{n3s4mmcv}: el cracker distribuido la recuperó tras $2.456\times10^{12}$ candidatos (índice $2{,}456{,}777{,}905{,}475$, $\approx$87\% de $36^8$) en $247{,}619$~s $\approx 68.8$~h a $9.92$~Mkeys/s agregados. Cada carácter adicional multiplica por 36 ese costo.
 
-% Optional figure: render results/benchmarks.json with notebooks/graphing.ipynb.
+% Figura opcional: renderizar results/benchmarks.json con notebooks/graphing.ipynb.
 % \begin{figure}[H]\centering\includegraphics[width=0.8\linewidth]{scaling.pdf}
-% \caption{Aggregate throughput vs.\ worker count.}\label{fig:scaling}\end{figure}
+% \caption{Rendimiento agregado vs.\ número de trabajadores.}\label{fig:scaling}\end{figure}

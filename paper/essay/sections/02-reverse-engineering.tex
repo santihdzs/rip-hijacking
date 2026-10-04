@@ -1,79 +1,49 @@
-\section{Reverse-Engineering the RIP MD5 Authentication}\label{sec:reveng}
-\paragraph{Packet layout.} \ph{Main idea: each captured update is an
-authenticated RIPv2 Response, decomposing into RIP header, auth header, route
-entry, and auth trailer. Then, in order: each update is a RIPv2 Response
-(command~2) sent to multicast 224.0.0.9 on UDP/520; authentication type~3 (Keyed
-Message Digest) places an authentication header as the first route-table entry
-and appends an authentication trailer carrying the digest; the observed size-06
-packet decomposes as in \autoref{tab:layout}. Close on: the trailer's 16-byte
-digest is the field the attack must reproduce.}
+\section{Ingeniería inversa de la autenticación MD5 de RIP}\label{sec:reveng}
+Cada captura es una Respuesta RIPv2 enviada a la dirección multicast 224.0.0.9 sobre UDP/520. La autenticación de tipo~3 coloca una cabecera de auth como primera entrada de la tabla de rutas y añade un tráiler de auth que transporta el digest (16 bytes). La captura se descompone como en la \autoref{tab:layout}, ese digest de 16 bytes es el campo que el ataque debe reproducir.
 
 \begin{table}[H]
 \centering
 \footnotesize
 \begin{tabularx}{\linewidth}{l l X}
 \hline
-\textbf{Region} & \textbf{Bytes} & \textbf{Contents (size-06 capture)}\\
+\textbf{Región} & \textbf{Bytes} & \textbf{Contenido (captura tamaño~06)}\\
 \hline
-RIP header        & 4  & command=2, version=2, routing-domain=0\\
-Auth header (RTE) & 20 & AFI=0xFFFF, auth-type=3, pkt-len=44, key-id=1, auth-len=20, seq, reserved\\
-Route entry       & 20 & the advertised route\\
-Auth trailer      & 20 & AFI=0xFFFF, type=0x0001, then the 16-byte digest\\
+Cabecera RIP        & 4  & command=2, version=2, routing-domain=0\\
+Cabecera auth (RTE) & 20 & AFI=0xFFFF, auth-type=3, pkt-len=44, key-id=1, auth-len=20, seq, reservado\\
+Entrada de ruta     & 20 & la ruta anunciada\\
+Tráiler de auth     & 20 & AFI=0xFFFF, type=0x0001, seguido del digest de 16 bytes\\
 \hline
 \end{tabularx}
-\caption{RIPv2/RFC~2082 authenticated packet layout (64-byte payload).}
+\caption{Formato del paquete autenticado RIPv2/RFC~2082 (payload de 64 bytes).}
 \label{tab:layout}
 \end{table}
 
-\paragraph{Digest construction (the key finding).} \ph{Main idea: the captured
-digest is RFC~2082 keyed-MD5, not the HMAC-MD5 the brief names. Then, in order:
-the 16-byte digest field is first overwritten with the key and a plain MD5 is
-taken over the whole packet; define $D$ as the payload bytes from the RIP header
-through the trailer's \texttt{AFI}/\texttt{type} field, i.e.\ everything except
-the 16 digest bytes, and $K_{16}$ as the ASCII key right-padded with zero bytes
-to 16, as used in \eqref{eq:keyed}. Close on: this construction and notation must
-be stated before the equation.}
+\paragraph{Construcción del digest (hallazgo principal).} El digest capturado corresponde a keyed-MD5 de RFC~2082. El campo de digest de 16 bytes se sustituye primero por la clave y se calcula un MD5 simple sobre todo el paquete. Sea $D$ la región desde la cabecera RIP hasta los campos \texttt{AFI}/\texttt{type} del tráiler (todo salvo los 16 bytes del digest) y $K_{16}$ la clave ASCII rellenada con bytes 0-16, como en la ecuación~\eqref{eq:keyed}.
 \begin{equation}
 \text{digest} \;=\; \mathrm{MD5}\bigl(\, D \,\|\, K_{16} \,\bigr).
 \label{eq:keyed}
 \end{equation}
-\ph{Main idea: how the construction and alphabet were confirmed by brute force.
-Then, in order: we tested both HMAC and keyed-MD5 and both candidate alphabets;
-only \eqref{eq:keyed} over a base-36 alphabet (lowercase letters and digits, not
-hexadecimal) reproduced the captured digest; the hexadecimal space was exhausted
-with no match. Close on: base-36 keyed-MD5 is the confirmed construction.}
+Se probaron ambas construcciones (keyed-MD5 y HMAC-MD5), solo la ecuación~\eqref{eq:keyed} sobre un alfabeto base-36 (letras minúsculas y dígitos, no hexadecimal) reprodujo el digest capturado, el espacio hexadecimal se agotó sin coincidencia (keyed-MD5 en 7.0~s, HMAC-MD5 en 20.4~s). Por lo tanto, base-36 con keyed-MD5 es la construcción confirmada.
 
-\paragraph{Recovered key and validation.} \ph{Main idea: the recovered key and
-that validation spans every packet, not one coincidence. Then, in order: the
-single-threaded oracle recovers \texttt{ykusrq} at index $1{,}618{,}816{,}210$ of
-$36^6$; the same key reproduces the digest of all 21 authenticated packets, each
-with a distinct sequence number and payload; \autoref{tab:reveng} summarizes the
-corrected parameters against the brief. Close on: 21/21 validation rules out a
-single-packet coincidence.}
+\paragraph{Claves recuperadas y validación.} Se recuperó una clave por captura, pero ninguna se aceptó por coincidir con un solo paquete. Se recalculó el digest keyed-MD5 para todos los paquetes de su captura. Las seis claves reproducen el digest en el 100\% de los paquetes (179/179 en total), lo que descarta coincidencias. La \autoref{tab:keys} resume cada clave, su índice base-36 y la validación por captura.
 
 \begin{table}[H]
 \centering
 \footnotesize
-\begin{tabularx}{\linewidth}{l l l X}
+\begin{tabular}{l c r l r c}
 \hline
-\textbf{Parameter} & \textbf{Brief says} & \textbf{Actual (measured)} & \textbf{Evidence}\\
+\textbf{Captura} & \textbf{Long.} & \textbf{Espacio $36^{n}$} & \textbf{Clave} & \textbf{Índice base-36} & \textbf{Valid.}\\
 \hline
-Construction & HMAC-MD5 & keyed-MD5 (RFC~2082) & only \eqref{eq:keyed} matches\\
-Alphabet     & hex / ``letters+numbers'' & base-36 & hex space exhausted, no match\\
-Key length   & 6 & 6 & filename \texttt{size\_06} + match\\
-Key (06\_01) & --- & \texttt{ykusrq} & 21/21 packets validate\\
+06\_01 & 6 & 2{,}176{,}782{,}336     & \texttt{ykusrq}   & 1{,}618{,}816{,}210     & 21/21\\
+06\_02 & 6 & 2{,}176{,}782{,}336     & \texttt{miy4or}   & 1{,}673{,}128{,}894     & 57/57\\
+07\_01 & 7 & 78{,}364{,}164{,}096    & \texttt{vs7evd8}  & 18{,}253{,}050{,}367    & 27/27\\
+07\_02 & 7 & 78{,}364{,}164{,}096    & \texttt{tpx6pje}  & 31{,}666{,}124{,}081    & 24/24\\
+07\_03 & 7 & 78{,}364{,}164{,}096    & \texttt{nh3cote}  & 32{,}269{,}346{,}987    & 28/28\\
+08\_01 & 8 & 2{,}821{,}109{,}907{,}456 & \texttt{n3s4mmcv} & 2{,}456{,}777{,}905{,}475 & 22/22\\
 \hline
-\end{tabularx}
-\caption{Reverse-engineered authentication parameters.}
-\label{tab:reveng}
+\end{tabular}
+\caption{Claves recuperadas (todas base-36, keyed-MD5) y validación contra los paquetes autenticados de cada captura.}
+\label{tab:keys}
 \end{table}
 
-\paragraph{Security implications.} \ph{Main idea: what the base-36 short-key
-finding means for real deployments. Then, in order: keyed-MD5 versus HMAC changes
-how a candidate is computed, not how many exist, so the weakness is the size of
-the space, not the MAC choice; the space is $36^6 = 2{,}176{,}782{,}336$
-candidates, fully enumerable; at the rates in \autoref{sec:bench} that space falls
-in minutes, so short keys over a small alphabet are the exploitable weakness.
-Close on: an attacker who captures one authenticated packet can recover a short
-key offline, so the digest offers little protection at this key length and
-alphabet.}
+\paragraph{Implicaciones de seguridad.} keyed-MD5 frente a HMAC cambia cómo se calcula un candidato, no cuántos existen. la debilidad es el tamaño del espacio, no la elección del MAC. Para seis caracteres base-36 el espacio es $36^6 = 2{,}176{,}782{,}336$ candidatos, cae en minutos. Un atacante que capture un solo paquete autenticado puede recuperar la clave sin conexión, de modo que el digest ofrece poca protección con claves cortas sobre un alfabeto pequeño. Cada carácter adicional multiplica el espacio por 36, la clave de ocho caracteres demando días de cómputo distribuido (\autoref{sec:bench}).

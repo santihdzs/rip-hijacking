@@ -1,15 +1,3 @@
-"""phase 2 master: partition the keyspace and coordinate workers over TCP.
-
-- extracts data+trailer from the target pcap (reusing the phase-1 oracle logic)
-- splits the keyspace into fixed-size, non-overlapping chunks handed out on
-  demand (dynamic load balancing -> no fast worker sits idle)
-- detects dead nodes by heartbeat timeout and requeues their chunk so no block
-  is ever skipped
-- the master node also cracks: it launches local worker subprocesses so the
-  coordinator host contributes CPU instead of sitting idle
-- on FOUND it re-verifies the key against the captured digest, then broadcasts
-  STOP to halt every worker immediately
-"""
 import argparse
 import json
 import os

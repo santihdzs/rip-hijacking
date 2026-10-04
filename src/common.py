@@ -1,8 +1,3 @@
-"""shared rip/rfc2082 parsing and digest primitives for the tc2007b cracker.
-
-references:
-- RFC 2453 (RIPv2), RFC 2082 (RIP-2 MD5 authentication)
-"""
 import hashlib
 import hmac as _hmac
 

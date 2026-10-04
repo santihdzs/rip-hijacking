@@ -1,21 +1,3 @@
-"""newline-delimited JSON message protocol for the master-worker cracker.
-
-each message is one json object terminated by '\n'. explicit message types:
-
-  worker -> master
-    HELLO      {worker, host, pid, cores}   announce + join
-    REQUEST    {}                            ask for a keyspace chunk
-    PROGRESS   {chunk, tried, rate}          periodic progress (== heartbeat)
-    HEARTBEAT  {}                            liveness while between chunks
-    DONE       {chunk, tried}                chunk exhausted, no match
-    FOUND      {chunk, key, idx}             key match
-
-  master -> worker
-    PARAMS     {data, digest, alphabet, length, construction, keyspace, chunk_size}
-    ASSIGN     {chunk, start, end}           here is your chunk
-    NOWORK     {}                            nothing free right now, retry
-    STOP       {key, by}                     global halt (found or exhausted)
-"""
 import json
 import select
 

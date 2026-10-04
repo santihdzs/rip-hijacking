@@ -1,23 +1,4 @@
-\section{Conclusion and Deferred Work}\label{sec:conclusion}
-\ph{Main idea: summary of what was recovered and how. Then, in order: we recovered
-a RIPv2/RFC~2082 authentication key by reverse-engineering the keyed-MD5
-construction, correcting the brief on both the MAC and the alphabet; we validated
-the key against every authenticated packet in the capture; a pull-based
-master--worker cluster over TCP with heartbeat- and disconnect-based failure
-recovery reproduces the same key and is strongly CPU-bound. Close on: the exploit
-is offline key recovery, and the result reproduces across the whole capture.}
+\section{Conclusión y trabajo diferido}\label{sec:conclusion}
+Se recuperaron las claves de auth RIPv2/RFC~2082 de las seis capturas tras reconstruir la construcción keyed-MD5. Cada clave se validó contra todos los paquetes autenticados de su captura: 179/179 en total. Un clúster maestro--trabajador por demanda sobre TCP, con recuperación ante fallos por heartbeat y por desconexión, reproduce las mismas claves y es claramente CPU-bound, pues la coordinación añade una sobrecarga mínima frente al costo de hashear.
 
-\paragraph{Deferred: live route injection.} \ph{Main idea: the offensive
-injection step is deferred by design. Then, in order: the final step is forging
-an authenticated RIPv2 update with the recovered key and injecting it into a live
-FRR/Mininet topology with Scapy; it is implemented as a documented stub
-(\texttt{src/inject\_route.py}); it was intentionally not executed here because it
-requires the Mininet sandbox. Close on: the stub in \texttt{src/inject\_route.py}
-documents the injection path.}
-
-\ph{Main idea: what a real deployment should do, grounded in the recovery cost.
-Then, in order: use longer keys over a larger alphabet, since recovery cost scales
-as the alphabet size raised to the key length; use per-neighbor keys with rotation
-to bound blast radius and key lifetime; migrate off RIP to a protocol with
-stronger authentication as the structural fix. Close on: these follow from the
-recovery cost we measured and are recommendations, not defenses we evaluated.}
+\paragraph{Recomendaciones.} El costo de recuperación crece como el tamaño del alfabeto elevado a la longitud de la clave, por eso conviene usar claves largas sobre un alfabeto amplio y migrar de RIP a un protocolo con autenticación más fuerte.

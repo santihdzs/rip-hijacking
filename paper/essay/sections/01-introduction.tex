@@ -1,19 +1,4 @@
-\section{Introduction}\label{sec:intro}
-\ph{Main idea: motivation and threat model for attacking RIPv2 authentication.
-Then, in order: RIPv2 distributes routing updates with only optional
-authentication, and the RFC~2082~\cite{rfc2082} keyed message-digest mode is the
-sole barrier to a forged update; an on-path attacker who forges an accepted
-update can inject or override routes to blackhole or man-in-the-middle traffic;
-this work stays honest to the lab scope by doing offline key recovery from the
-provided captures, not a live attack. Close on: the recovered key is what would
-unlock a forged update, with live injection left as a documented stub
-(\texttt{inject\_route.py}).}
+\section{Introducción}\label{sec:intro}
+RIPv2 transporta actualizaciones con autenticación opcional. Cuando se habilita, el resumen criptográfico con clave (\emph{keyed message digest}, RFC~2082) es lo único que impide inyectar una actualización falsificada. Un atacante que produzca una actualización con un digest válido puede inyectar / sobrescribir rutas y desviar el tráfico hacia nodos comprometidos.
 
-\ph{Main idea: what this report does and the roadmap through the sections. Then,
-in order: reverse-engineer the exact digest construction from a capture
-(\autoref{sec:reveng}); build a master--worker cluster that partitions the
-keyspace across TCP-connected workers (\autoref{sec:protocol},
-\autoref{sec:partition}); tolerate node failure so no chunk is left unprocessed
-(\autoref{sec:death}); characterize throughput (\autoref{sec:bench}). Close on:
-the captures use six-character base-36 keys, recoverable in minutes at the rates
-we measure.}
+Este reporte reconstruye el digest (\autoref{sec:reveng}) y, a partir de eso, recupera por fuerza bruta las claves compartidas de seis capturas RIPv2 autenticadas. La \autoref{sec:protocol} describe el protocolo de coordinación TCP entre maestro y trabajadores; la \autoref{sec:partition}, la partición del espacio de claves; la \autoref{sec:death}, la tolerancia a caídas de nodos; la \autoref{sec:bench}, el rendimiento medido; y la \autoref{sec:conclusion} cierra con conclusiones y trabajo diferido.

@@ -1,13 +1,3 @@
-"""phase 3 benchmarks: per-node HPS, aggregate cluster HPS, CPU vs socket bound.
-
-three measurements, all against the real size-06 target digest:
-  BM1  single-core raw hashing rate (pure compute baseline)
-  BM2  multi-process scaling sweep -> per-core and aggregate HPS, saturation
-  BM3  instrumented distributed run -> per-worker HPS, cluster HPS, and the
-       compute-vs-socket-wait split that classifies the workload
-
-results are written to results/benchmarks.json and results/benchmarks.txt.
-"""
 import json
 import os
 import subprocess

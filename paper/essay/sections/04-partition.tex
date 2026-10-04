@@ -1,35 +1,4 @@
-\section{Keyspace Partition Strategy}\label{sec:partition}
-\ph{Main idea: the keyspace is indexed and split into fixed-size chunks served
-from a queue. Then, in order: the search space is every length-6 string over the
-base-36 alphabet, of size $N = 36^6 = 2{,}176{,}782{,}336$; each integer index
-$i \in [0, N)$ maps to a key by little-endian positional encoding, so a contiguous
-index interval is a set of distinct keys with no overlap between intervals; the
-master divides $[0,N)$ into fixed-size chunks of $C$ keys, giving
-$\lceil N/C \rceil$ chunks (e.g.\ $C = 5\times10^6$ yields 436 chunks) served from
-a queue. Close on: contiguous non-overlapping intervals are what make dynamic
-assignment and safe re-queue possible.}
+\section{Estrategia de partición del espacio de claves}\label{sec:partition}
+El espacio de búsqueda es el conjunto de todas las cadenas de longitud fija sobre el alfabeto base-36. Para seis caracteres su tamaño es $N = 36^6 = 2{,}176{,}782{,}336$. Cada índice entero $i \in [0, N)$ se convierte determinísticamente en una clave mediante codificación posicional, por lo que un intervalo de índices corresponde a un conjunto de claves distintas y dos intervalos disjuntos no se traslapan. El main divide $[0,N)$ en bloques de tamaño fijo $C$, obteniendo $\lceil N/C \rceil$ bloques (por ejemplo, $C = 5\times10^6$ da 436 bloques) servidos desde una queue.
 
-\begin{algorithm}[H]
-\footnotesize
-\caption{Dynamic, non-overlapping assignment}
-\begin{algorithmic}
-\STATE pending $\leftarrow$ queue$(0,1,\dots,\lceil N/C\rceil-1)$;\; inflight $\leftarrow \emptyset$
-\WHILE{a \texttt{REQUEST} arrives and not found}
-  \IF{pending $\neq \emptyset$}
-     \STATE $c \leftarrow$ pop(pending);\; inflight$[c] \leftarrow$ (worker, now)
-     \STATE send \texttt{ASSIGN}$(c,\, cC,\, \min((c{+}1)C, N))$
-  \ELSIF{inflight $\neq \emptyset$}
-     \STATE send \texttt{NOWORK} \COMMENT{outstanding chunk may be requeued}
-  \ELSE
-     \STATE mark exhausted;\; broadcast \texttt{STOP}
-  \ENDIF
-\ENDWHILE
-\end{algorithmic}
-\end{algorithm}
-
-\ph{Main idea: why dynamic pull-based assignment beats a static split and how it
-composes with failure recovery. Then, in order: pull-based assignment keeps
-heterogeneous or contended workers balanced automatically rather than fixing
-shares up front; a chunk is only ever ``done'' when its \texttt{DONE} arrives; so
-a lost chunk can be safely re-queued (\autoref{sec:death}). Close on: assignment
-and recovery share one invariant, a chunk is complete only on \texttt{DONE}.}
+La asignación es dinámica. El main conserva una queue de bloques pendientes y un registro de los asignados (\emph{inflight}). Ante cada \texttt{REQUEST}, si hay pendientes, entrega el siguiente mediante \texttt{ASSIGN}$(c,\, cC,\, \min((c{+}1)C, N))$ y lo marca como asignado. Si no quedan pendientes pero sí asignados, responde \texttt{NOWORK} porque alguno podría reencolarse, y si no queda ninguno, marca el espacio como agotado y difunde \texttt{STOP}. Un bloque solo se da por terminado cuando llega su \texttt{DONE}.
