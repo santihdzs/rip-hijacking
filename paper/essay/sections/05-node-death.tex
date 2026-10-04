@@ -1,28 +1,23 @@
 \section{Node-Death Detection and Reassignment}\label{sec:death}
-No assigned chunk may be silently lost, or the search could terminate reporting
-``not found'' while skipping the key. The master defends against two failure
-modes, both of which requeue the dead node's chunk to the \emph{front} of
-\texttt{pending} so a surviving worker picks it up:
-
-\begin{enumerate}\itemsep2pt
-\item \textbf{Hard crash / kill.} The TCP socket closes; the master's read
-returns EOF, and the disconnect handler requeues every chunk that worker held.
-\item \textbf{Freeze / network partition.} The socket stays open but
-\texttt{PROGRESS} heartbeats stop. A monitor thread requeues any chunk whose
+\ph{Main idea: no assigned chunk may be silently lost, and the master defends
+against two failure modes by requeueing to the front of pending. Then, in order:
+the risk is that a lost chunk lets the search terminate reporting ``not found''
+while skipping the key; hard crash or kill, where the TCP socket closes, the
+master's read returns EOF, and the disconnect handler requeues every chunk that
+worker held; freeze or network partition, where the socket stays open but
+\texttt{PROGRESS} heartbeats stop, and a monitor thread requeues any chunk whose
 last heartbeat is older than a timeout $T$ (default $5$\,s) and marks the node
-dead.
-\end{enumerate}
+dead. Close on: both modes requeue to the front of \texttt{pending} so a
+surviving worker picks the chunk up.}
 
-\paragraph{Empirical check.} In a controlled run with three workers, freezing
-one with \texttt{SIGSTOP} and killing another with \texttt{SIGKILL} produced the
-expected master events:
+\paragraph{Empirical check.} \ph{Main idea: a controlled fault-injection run
+confirms no chunk is lost. Then, in order: with three workers, freeze one with
+\texttt{SIGSTOP} and kill another with \texttt{SIGKILL}; the master emits the
+expected events shown below, a timeout requeueing chunk 19 and a disconnect
+requeueing chunk 40; both requeued chunks are subsequently completed by the
+surviving worker. Close on: coverage of the keyspace stayed total, so neither
+failure mode drops a chunk.}
 \begin{quote}\footnotesize\ttfamily
 TIMEOUT: worker freeze-w1 silent >4.0s, requeued chunk 19\\
 worker kill-w2 disconnected; requeued chunks [40]
 \end{quote}
-Both chunks were subsequently completed by the surviving worker, so coverage of
-the keyspace remained total.
-
-% TODO(you): optional reflection on timeout tuning (false positives on slow
-% nodes vs. detection latency). Left for your prose.
-\todo{optional: discuss timeout tuning trade-offs}

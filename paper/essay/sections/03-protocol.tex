@@ -1,9 +1,12 @@
 \section{TCP Coordination Protocol and Message Types}\label{sec:protocol}
-The master and workers communicate over raw TCP sockets using a line-oriented
-protocol: each message is one JSON object terminated by a newline, which makes
-framing trivial and the traffic human-readable during debugging. The master
-never blocks a fast worker: chunks are handed out \emph{on request}, so faster
-nodes simply request more often. \autoref{tab:msgs} lists the message types.
+\ph{Main idea: master and workers coordinate over raw TCP with a line-oriented
+protocol and pull-based work handout. Then, in order: each message is one JSON
+object terminated by a newline, so framing is trivial and the traffic is
+human-readable during debugging; the master never blocks a fast worker because
+chunks are handed out on request, so faster nodes request more often;
+\autoref{tab:msgs} lists the message types. Close on: newline-delimited JSON over
+raw TCP was chosen for trivial framing rather than a length-prefixed or heavier
+RPC scheme.}
 
 \begin{table}[H]
 \centering
@@ -28,15 +31,13 @@ nodes simply request more often. \autoref{tab:msgs} lists the message types.
 \label{tab:msgs}
 \end{table}
 
-\paragraph{Lifecycle.} A worker sends \texttt{HELLO}, receives \texttt{PARAMS},
-then loops: \texttt{REQUEST}~$\rightarrow$~\texttt{ASSIGN}, crack the chunk in
-sub-batches while emitting \texttt{PROGRESS}, and report \texttt{DONE} or
-\texttt{FOUND}. On \texttt{FOUND} the master \emph{re-verifies} the claimed key
-against the captured digest before trusting it, then broadcasts \texttt{STOP} to
-every connected worker so no node keeps hashing. The master node is never idle:
-it launches local worker subprocesses that connect back over loopback and crack
-alongside the remote workers.
-
-% TODO(you): if you want, add a short note on why newline-delimited JSON over
-% raw TCP was chosen versus alternatives (length-prefixing, gRPC, etc.).
-\todo{optional: justify the protocol/encoding design choice in your words}
+\paragraph{Lifecycle.} \ph{Main idea: the per-worker message lifecycle and how a
+found key halts the cluster. Then, in order: a worker sends \texttt{HELLO},
+receives \texttt{PARAMS}, then loops \texttt{REQUEST}$\rightarrow$\texttt{ASSIGN},
+cracking each chunk in sub-batches while emitting \texttt{PROGRESS}, and reports
+\texttt{DONE} or \texttt{FOUND}; on \texttt{FOUND} the master re-verifies the
+claimed key against the captured digest before trusting it, then broadcasts
+\texttt{STOP} so no node keeps hashing; the master is never idle, launching local
+worker subprocesses that connect back over loopback and crack alongside the
+remote workers. Close on: re-verification plus \texttt{STOP} guarantees a single
+trusted result and an immediate global halt.}

@@ -1,11 +1,13 @@
 \section{Keyspace Partition Strategy}\label{sec:partition}
-The search space is every length-6 string over the base-36 alphabet, of size
-$N = 36^6 = 2{,}176{,}782{,}336$. Each integer index $i \in [0, N)$ maps to a
-key by little-endian positional encoding over the alphabet, so a \emph{contiguous}
-index interval corresponds to a set of distinct keys with no overlap between
-intervals. The master divides $[0,N)$ into fixed-size chunks of $C$ keys, giving
-$\lceil N/C \rceil$ chunks (e.g.\ $C = 5\times10^6$ yields 436 chunks), and
-serves chunk ids from a queue.
+\ph{Main idea: the keyspace is indexed and split into fixed-size chunks served
+from a queue. Then, in order: the search space is every length-6 string over the
+base-36 alphabet, of size $N = 36^6 = 2{,}176{,}782{,}336$; each integer index
+$i \in [0, N)$ maps to a key by little-endian positional encoding, so a contiguous
+index interval is a set of distinct keys with no overlap between intervals; the
+master divides $[0,N)$ into fixed-size chunks of $C$ keys, giving
+$\lceil N/C \rceil$ chunks (e.g.\ $C = 5\times10^6$ yields 436 chunks) served from
+a queue. Close on: contiguous non-overlapping intervals are what make dynamic
+assignment and safe re-queue possible.}
 
 \begin{algorithm}[H]
 \footnotesize
@@ -25,12 +27,9 @@ serves chunk ids from a queue.
 \end{algorithmic}
 \end{algorithm}
 
-Dynamic (pull-based) assignment rather than a static up-front split means
-heterogeneous or contended workers stay balanced automatically, and it composes
-cleanly with failure recovery: a chunk is only ever ``done'' when its
-\texttt{DONE} arrives, so a lost chunk can be safely re-queued
-(\autoref{sec:death}).
-
-% TODO(you): optional analysis of chunk-size trade-off (scheduling overhead vs.
-% requeue granularity). Left for your prose.
-\todo{optional: analyze the chunk-size trade-off}
+\ph{Main idea: why dynamic pull-based assignment beats a static split and how it
+composes with failure recovery. Then, in order: pull-based assignment keeps
+heterogeneous or contended workers balanced automatically rather than fixing
+shares up front; a chunk is only ever ``done'' when its \texttt{DONE} arrives; so
+a lost chunk can be safely re-queued (\autoref{sec:death}). Close on: assignment
+and recovery share one invariant, a chunk is complete only on \texttt{DONE}.}

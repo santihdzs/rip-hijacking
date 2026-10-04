@@ -1,15 +1,19 @@
 \section{Introduction}\label{sec:intro}
-This report documents a distributed brute-force attack that recovers the
-authentication key protecting RIPv2 routing updates captured in a controlled
-lab. RIPv2 supports a keyed message-digest authentication mode
-(RFC~2082~\cite{rfc2082}); the captures use six-character keys. We first
-reverse-engineer the exact digest construction from a packet capture
-(\autoref{sec:reveng}), then build a master--worker cluster that partitions the
-key\-space across TCP-connected workers (\autoref{sec:protocol},
-\autoref{sec:partition}), tolerates node failure (\autoref{sec:death}), and we
-characterize its throughput (\autoref{sec:bench}).
+\ph{Main idea: motivation and threat model for attacking RIPv2 authentication.
+Then, in order: RIPv2 distributes routing updates with only optional
+authentication, and the RFC~2082~\cite{rfc2082} keyed message-digest mode is the
+sole barrier to a forged update; an on-path attacker who forges an accepted
+update can inject or override routes to blackhole or man-in-the-middle traffic;
+this work stays honest to the lab scope by doing offline key recovery from the
+provided captures, not a live attack. Close on: the recovered key is what would
+unlock a forged update, with live injection left as a documented stub
+(\texttt{inject\_route.py}).}
 
-% TODO(you): 1--2 sentences of motivation/context for the assignment and the
-% threat model (why unauthenticated/weakly-authenticated RIP matters). This is
-% your framing, so it is left for your prose.
-\todo{write the motivation / threat-model framing here}
+\ph{Main idea: what this report does and the roadmap through the sections. Then,
+in order: reverse-engineer the exact digest construction from a capture
+(\autoref{sec:reveng}); build a master--worker cluster that partitions the
+keyspace across TCP-connected workers (\autoref{sec:protocol},
+\autoref{sec:partition}); tolerate node failure so no chunk is left unprocessed
+(\autoref{sec:death}); characterize throughput (\autoref{sec:bench}). Close on:
+the captures use six-character base-36 keys, recoverable in minutes at the rates
+we measure.}

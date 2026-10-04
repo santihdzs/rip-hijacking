@@ -1,9 +1,12 @@
 \section{Reverse-Engineering the RIP MD5 Authentication}\label{sec:reveng}
-\paragraph{Packet layout.} Each captured update is a RIPv2 \emph{Response}
-(command~2) sent to the multicast group 224.0.0.9 on UDP/520. Authentication of
-type~3 (Keyed Message Digest) places an authentication \emph{header} as the
-first route-table entry and appends an authentication \emph{trailer} carrying
-the digest. The observed size-06 packet decomposes as in \autoref{tab:layout}.
+\paragraph{Packet layout.} \ph{Main idea: each captured update is an
+authenticated RIPv2 Response, decomposing into RIP header, auth header, route
+entry, and auth trailer. Then, in order: each update is a RIPv2 Response
+(command~2) sent to multicast 224.0.0.9 on UDP/520; authentication type~3 (Keyed
+Message Digest) places an authentication header as the first route-table entry
+and appends an authentication trailer carrying the digest; the observed size-06
+packet decomposes as in \autoref{tab:layout}. Close on: the trailer's 16-byte
+digest is the field the attack must reproduce.}
 
 \begin{table}[H]
 \centering
@@ -22,27 +25,31 @@ Auth trailer      & 20 & AFI=0xFFFF, type=0x0001, then the 16-byte digest\\
 \label{tab:layout}
 \end{table}
 
-\paragraph{Digest construction (the key finding).} The assignment brief names
-``HMAC-MD5'', but the captured trailers are \emph{not} reproducible with HMAC.
-RFC~2082 instead specifies a \emph{keyed} MD5: the 16-byte digest field is
-first overwritten with the key, and a plain MD5 is taken over the whole packet.
-Concretely, writing $D$ for the payload bytes from the RIP header through the
-trailer's \texttt{AFI}/\texttt{type} field (i.e.\ everything except the 16 digest
-bytes) and $K_{16}$ for the ASCII key right-padded with zero bytes to 16:
+\paragraph{Digest construction (the key finding).} \ph{Main idea: the captured
+digest is RFC~2082 keyed-MD5, not the HMAC-MD5 the brief names. Then, in order:
+the 16-byte digest field is first overwritten with the key and a plain MD5 is
+taken over the whole packet; define $D$ as the payload bytes from the RIP header
+through the trailer's \texttt{AFI}/\texttt{type} field, i.e.\ everything except
+the 16 digest bytes, and $K_{16}$ as the ASCII key right-padded with zero bytes
+to 16, as used in \eqref{eq:keyed}. Close on: this construction and notation must
+be stated before the equation.}
 \begin{equation}
 \text{digest} \;=\; \mathrm{MD5}\bigl(\, D \,\|\, K_{16} \,\bigr).
 \label{eq:keyed}
 \end{equation}
-We tested both constructions and both candidate alphabets by brute force; only
-\eqref{eq:keyed} over a \textbf{base-36} alphabet (lowercase letters and
-digits, \emph{not} hexadecimal) reproduces the captured digest.
+\ph{Main idea: how the construction and alphabet were confirmed by brute force.
+Then, in order: we tested both HMAC and keyed-MD5 and both candidate alphabets;
+only \eqref{eq:keyed} over a base-36 alphabet (lowercase letters and digits, not
+hexadecimal) reproduced the captured digest; the hexadecimal space was exhausted
+with no match. Close on: base-36 keyed-MD5 is the confirmed construction.}
 
-\paragraph{Recovered key and validation.} The single-threaded oracle recovers
-\texttt{ykusrq} (index $1{,}618{,}816{,}210$ of $36^6$). Validation is not a
-single-packet coincidence: the same key reproduces the digest of
-\textbf{all 21} authenticated packets in the capture, each with a distinct
-sequence number and payload. \autoref{tab:reveng} summarizes the corrected
-parameters.
+\paragraph{Recovered key and validation.} \ph{Main idea: the recovered key and
+that validation spans every packet, not one coincidence. Then, in order: the
+single-threaded oracle recovers \texttt{ykusrq} at index $1{,}618{,}816{,}210$ of
+$36^6$; the same key reproduces the digest of all 21 authenticated packets, each
+with a distinct sequence number and payload; \autoref{tab:reveng} summarizes the
+corrected parameters against the brief. Close on: 21/21 validation rules out a
+single-packet coincidence.}
 
 \begin{table}[H]
 \centering
@@ -61,6 +68,12 @@ Key (06\_01) & --- & \texttt{ykusrq} & 21/21 packets validate\\
 \label{tab:reveng}
 \end{table}
 
-% TODO(you): discussion of what this weakness means (offline-crackable short
-% keys, no salt, digest-replacement scheme). Interpretation is yours.
-\todo{discuss the security implications of the construction and short keys}
+\paragraph{Security implications.} \ph{Main idea: what the base-36 short-key
+finding means for real deployments. Then, in order: keyed-MD5 versus HMAC changes
+how a candidate is computed, not how many exist, so the weakness is the size of
+the space, not the MAC choice; the space is $36^6 = 2{,}176{,}782{,}336$
+candidates, fully enumerable; at the rates in \autoref{sec:bench} that space falls
+in minutes, so short keys over a small alphabet are the exploitable weakness.
+Close on: an attacker who captures one authenticated packet can recover a short
+key offline, so the digest offers little protection at this key length and
+alphabet.}

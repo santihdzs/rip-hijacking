@@ -1,7 +1,8 @@
 \section{Benchmark Metrics}\label{sec:bench}
-All measurements target the size-06 digest and the keyed-MD5 construction on a
-host with 10 logical cores. Rates are in millions of keys hashed per second
-(Mkeys/s).
+\ph{Main idea: benchmark setup and units. Then, in order: all measurements target
+the size-06 digest and the keyed-MD5 construction; the host has 10 logical cores;
+rates are millions of keys hashed per second (Mkeys/s). Close on: these units
+apply to \autoref{tab:bench} and the appendix scaling sweep.}
 
 \begin{table}[H]
 \centering
@@ -20,22 +21,22 @@ BM3 distributed, 8 TCP workers      & 12.56 & $\approx$1.75\\
 \label{tab:bench}
 \end{table}
 
-\paragraph{CPU-bound vs.\ network-bound.} Instrumenting each worker to split its
-wall time into hashing versus time blocked on the socket shows the workload is
-overwhelmingly compute-bound: across the distributed run, aggregate compute time
-was $69.1$\,s against $0.03$\,s of socket wait, i.e.\ \textbf{99.96\%} of time is
-spent hashing. The coordination protocol is therefore not the bottleneck; total
-throughput scales with available CPU cores until the host saturates
-(\autoref{tab:bench}, where per-core rate falls once the process count exceeds
-the physical core budget).
+\paragraph{CPU-bound vs.\ network-bound.} \ph{Main idea: the workload is
+overwhelmingly compute-bound, so coordination is not the bottleneck. Then, in
+order: each worker's wall time splits into hashing versus time blocked on the
+socket; across the distributed run aggregate compute time was $69.1$\,s against
+$0.03$\,s of socket wait, i.e.\ 99.96\% of time spent hashing; throughput
+therefore scales with CPU cores until the host saturates, as in \autoref{tab:bench}
+where per-core rate falls once the process count exceeds the physical-core
+budget. Close on: the TCP coordination protocol is not the bottleneck, CPU is.}
 
-\paragraph{End-to-end.} The full recovery of \texttt{ykusrq} took $738$\,s
+\paragraph{End-to-end.} \ph{Main idea: end-to-end recovery time, single-threaded
+versus cluster. Then, in order: full recovery of \texttt{ykusrq} took $738$\,s
 single-threaded versus $142$\,s on the contended cluster; an uncontended
 $\sim$12.6\,Mkeys/s cluster covers the whole $2.18\times10^9$ space in well under
-that.
+that. Close on: the six-character base-36 space is a minutes-scale target at
+cluster rates.}
 
 % Optional figure: render results/benchmarks.json with notebooks/graphing.ipynb.
 % \begin{figure}[H]\centering\includegraphics[width=0.8\linewidth]{scaling.pdf}
 % \caption{Aggregate throughput vs.\ worker count.}\label{fig:scaling}\end{figure}
-\todo{optional: generate the scaling figure from notebooks/graphing.ipynb and
-interpret the saturation point}

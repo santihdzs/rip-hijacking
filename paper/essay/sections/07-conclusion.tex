@@ -1,17 +1,23 @@
 \section{Conclusion and Deferred Work}\label{sec:conclusion}
-We recovered a RIPv2/RFC~2082 authentication key by reverse-engineering the
-keyed-MD5 construction (correcting the brief on both the MAC and the alphabet)
-and validating it against every authenticated packet in the capture. A
-pull-based master--worker cluster over TCP, with heartbeat- and
-disconnect-based failure recovery, reproduces the same key and is strongly
-CPU-bound.
+\ph{Main idea: summary of what was recovered and how. Then, in order: we recovered
+a RIPv2/RFC~2082 authentication key by reverse-engineering the keyed-MD5
+construction, correcting the brief on both the MAC and the alphabet; we validated
+the key against every authenticated packet in the capture; a pull-based
+master--worker cluster over TCP with heartbeat- and disconnect-based failure
+recovery reproduces the same key and is strongly CPU-bound. Close on: the exploit
+is offline key recovery, and the result reproduces across the whole capture.}
 
-\paragraph{Deferred: live route injection.} The final offensive step --- forging
-an authenticated RIPv2 update with the recovered key and injecting it into a
-live FRR/Mininet topology with Scapy --- is implemented as a documented stub
-(\texttt{src/inject\_route.py}) and was intentionally \emph{not} executed here,
-as it requires the Mininet sandbox. See the \texttt{TODO} in that file.
+\paragraph{Deferred: live route injection.} \ph{Main idea: the offensive
+injection step is deferred by design. Then, in order: the final step is forging
+an authenticated RIPv2 update with the recovered key and injecting it into a live
+FRR/Mininet topology with Scapy; it is implemented as a documented stub
+(\texttt{src/inject\_route.py}); it was intentionally not executed here because it
+requires the Mininet sandbox. Close on: the stub in \texttt{src/inject\_route.py}
+documents the injection path.}
 
-% TODO(you): closing remarks / what you learned / mitigations (e.g., longer
-% keys, per-neighbor keys, migrating off RIP). Your prose.
-\todo{write closing remarks and mitigation recommendations}
+\ph{Main idea: what a real deployment should do, grounded in the recovery cost.
+Then, in order: use longer keys over a larger alphabet, since recovery cost scales
+as the alphabet size raised to the key length; use per-neighbor keys with rotation
+to bound blast radius and key lifetime; migrate off RIP to a protocol with
+stronger authentication as the structural fix. Close on: these follow from the
+recovery cost we measured and are recommendations, not defenses we evaluated.}
